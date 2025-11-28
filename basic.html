@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Clasificador de Noticias</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6C63FF;
+            --secondary: #4DB6AC;
+            --accent: #FF6B6B;
+            --light: #F5F7FA;
+            --dark: #343A40;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --info: #2196F3;
+            --radius: 16px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 15px;
+        }
+
+        .instructions {
+            background-color: rgba(108, 99, 255, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .instructions h3 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .instructions h3 i {
+            margin-right: 8px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+            line-height: 1.4;
+            font-size: 0.9rem;
+        }
+
+        #drop-area {
+            width: 100%;
+            height: 160px;
+            border: 2px dashed #ccc;
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 15px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background-color: rgba(108, 99, 255, 0.02);
+            position: relative;
+            overflow: hidden;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #drop-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.05), rgba(77, 182, 172, 0.05));
+            z-index: -1;
+            transition: var(--transition);
+        }
+
+        #drop-area:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        #drop-area:hover::before {
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(77, 182, 172, 0.1));
+        }
+
+        #drop-area.highlight {
+            border-color: var(--primary);
+            background-color: rgba(108, 99, 255, 0.1);
+            transform: scale(1.02);
+        }
+
+        #drop-area i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        #drop-area p {
+            font-size: 1rem;
+            color: var(--dark);
+            margin-bottom: 3px;
+        }
+
+        #drop-area .small-text {
+            font-size: 0.8rem;
+            color: #777;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .status {
+            text-align: center;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+            animation: fadeIn 0.5s ease;
+            font-size: 0.9rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            border-left: 4px solid var(--warning);
+        }
+
+        .error {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: #721c24;
+            border-left: 4px solid var(--danger);
+        }
+
+        .success {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: #155724;
+            border-left: 4px solid var(--success);
+        }
+
+        .info {
+            background-color: rgba(33, 150, 243, 0.1);
+            color: #0c5460;
+            border-left: 4px solid var(--info);
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 250px;
+            margin: 15px auto;
+            display: none;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+        }
+
+        #image-preview:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.05), rgba(77, 182, 172, 0.05));
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        #result.empty {
+            background-color: rgba(0, 0, 0, 0.02);
+            color: #888;
+            font-style: italic;
+        }
+
+        #result h3 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #result h3 i {
+            margin-right: 8px;
+        }
+
+        #result .category {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+
+        #result .confidence {
+            font-size: 0.9rem;
+            color: var(--dark);
+        }
+
+        #result .uncertain {
+            font-size: 1rem;
+            color: var(--warning);
+            margin-bottom: 8px;
+        }
+
+        #result .retry {
+            margin-top: 12px;
+        }
+
+        #result .retry button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        #result .retry button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #777;
+            font-size: 0.8rem;
+            border-top: 1px solid #eee;
+        }
+
+        .error-details {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: #666;
+        }
+
+        .browser-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .mobile-optimized {
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .touch-button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 25px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            margin: 10px 0;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+        }
+
+        .touch-button:active {
+            transform: scale(0.98);
+        }
+
+        .touch-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 99, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Clasificador de Noticias</h1>
+            <p>Inteligencia Artificial para categorización de noticias</p>
+        </div>
+        
+        <div class="content">
+            <div id="browser-warning" class="browser-warning" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i> Para una mejor experiencia, usa Chrome, Safari o Firefox en su última versión.
+            </div>
+            
+            <div class="instructions mobile-optimized">
+                <h3><i class="fas fa-info-circle"></i> Instrucciones</h3>
+                <ol>
+                    <li>Toca el área para seleccionar una imagen de noticia</li>
+                    <li>O arrastra y suelta una imagen en el área designada</li>
+                    <li>El sistema clasificará automáticamente la imagen</li>
+                </ol>
+            </div>
+            
+            <div id="drop-area">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Toca para seleccionar una imagen</p>
+                <p class="small-text">o arrastra y suelta aquí</p>
+                <input type="file" id="file-input" accept="image/*">
+            </div>
+            
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            
+            <div id="status" class="status"></div>
+            
+            <img id="image-preview" alt="Vista previa de la imagen">
+            
+            <div id="result" class="empty">
+                <p>El resultado de la clasificación aparecerá aquí</p>
+            </div>
+            
+            <button id="retry-button" class="touch-button" style="display: none;">
+                <i class="fas fa-redo"></i> Intentar con otra imagen
+            </button>
+        </div>
+        
+        <div class="footer">
+            <p>Proyecto escolar de clasificación de noticias con Teachable Machine</p>
+        </div>
+    </div>
+
+    <!-- Bibliotecas necesarias -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    
+    <script>
+        // Verificar compatibilidad del navegador
+        function checkBrowserCompatibility() {
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+            const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+            const isFirefox = /Firefox/.test(navigator.userAgent);
+            
+            if (!isChrome && !isSafari && !isFirefox) {
+                document.getElementById('browser-warning').style.display = 'block';
+            }
+            
+            // Verificar soporte para FileReader
+            if (typeof FileReader === 'undefined') {
+                showStatus('Tu navegador no soporta la lectura de archivos. Por favor, actualiza tu navegador.', 'error');
+                return false;
+            }
+            
+            // Verificar soporte para Fetch API
+            if (!window.fetch) {
+                showStatus('Tu navegador no soporta las funciones necesarias. Por favor, actualiza tu navegador.', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // URL del modelo de Teachable Machine
+        const URL = "https://teachablemachine.withgoogle.com/models/8I6qPrShr/";
+        
+        // Variables globales
+        let model;
+        let modelLoaded = false;
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const retryButton = document.getElementById('retry-button');
+
+        // Mostrar estado
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Actualizar barra de progreso
+        function updateProgress(percent) {
+            progressBar.style.width = `${percent}%`;
+            progressContainer.style.display = 'block';
+            
+            if (percent >= 100) {
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+            }
+        }
+
+        // Inicializar el modelo
+        async function initModel() {
+            if (!checkBrowserCompatibility()) {
+                return;
+            }
+            
+            showStatus('Cargando modelo de clasificación...', 'loading');
+            updateProgress(10);
+            
+            try {
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+                
+                console.log('Cargando modelo desde:', modelURL);
+                updateProgress(30);
+                
+                // Verificar si las URLs son accesibles
+                try {
+                    updateProgress(40);
+                    const modelResponse = await fetch(modelURL, { 
+                        method: 'HEAD',
+                        mode: 'cors',
+                        cache: 'no-cache'
+                    });
+                    
+                    if (!modelResponse.ok) {
+                        throw new Error(`No se pudo acceder al modelo: ${modelResponse.status}`);
+                    }
+                    
+                    updateProgress(60);
+                    const metadataResponse = await fetch(metadataURL, { 
+                        method: 'HEAD',
+                        mode: 'cors',
+                        cache: 'no-cache'
+                    });
+                    
+                    if (!metadataResponse.ok) {
+                        throw new Error(`No se pudo acceder a los metadatos: ${metadataResponse.status}`);
+                    }
+                } catch (error) {
+                    throw new Error(`Error al verificar el modelo: ${error.message}`);
+                }
+                
+                updateProgress(80);
+                model = await tmImage.load(modelURL, metadataURL);
+                modelLoaded = true;
+                updateProgress(100);
+                console.log('Modelo cargado correctamente');
+                showStatus('Modelo cargado correctamente. ¡Listo para clasificar!', 'success');
+            } catch (error) {
+                console.error('Error al cargar el modelo:', error);
+                updateProgress(0);
+                showStatus(`Error al cargar el modelo: ${error.message}`, 'error');
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Error al cargar el modelo</h3>
+                        <p>No se pudo cargar el modelo de clasificación.</p>
+                        <div class="error-details">Detalles: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Configurar el área de arrastrar y soltar
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+
+        // Prevenir comportamientos por defecto
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Resaltar el área al arrastrar sobre ella
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('highlight');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('highlight');
+        }
+
+        // Manejar archivos soltados
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                handleFiles(files);
+            }
+        }
+
+        // Manejar clic para seleccionar archivo
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFiles(fileInput.files);
+            }
+        });
+
+        // Procesar archivos
+        function handleFiles(files) {
+            const file = files[0];
+            
+            if (!modelLoaded) {
+                showStatus('El modelo aún no se ha cargado. Por favor, espera.', 'error');
+                return;
+            }
+            
+            if (file.type.startsWith('image/')) {
+                // Verificar tamaño del archivo (máximo 3MB para móviles)
+                if (file.size > 3 * 1024 * 1024) {
+                    showStatus('El archivo es demasiado grande. Por favor, selecciona una imagen menor a 3MB.', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    
+                    // Verificar que la imagen se cargó correctamente
+                    imagePreview.onload = function() {
+                        // Clasificar la imagen después de un pequeño retraso para asegurar que se cargue
+                        setTimeout(() => {
+                            classifyImage(imagePreview);
+                        }, 500);
+                    };
+                    
+                    imagePreview.onerror = function() {
+                        showStatus('Error al cargar la imagen. Por favor, intenta con otra imagen.', 'error');
+                        imagePreview.style.display = 'none';
+                    };
+                };
+                
+                reader.onerror = function() {
+                    showStatus('Error al leer el archivo. Por favor, intenta de nuevo.', 'error');
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                showStatus('Por favor, selecciona un archivo de imagen válido (JPEG, PNG, etc.).', 'error');
+            }
+        }
+
+        // Clasificar la imagen y mostrar solo la categoría con mayor probabilidad
+        async function classifyImage(img) {
+            if (!modelLoaded) {
+                showStatus('El modelo no está cargado. No se puede clasificar la imagen.', 'error');
+                return;
+            }
+            
+            // Verificar que la imagen tenga dimensiones válidas
+            if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                showStatus('La imagen no tiene dimensiones válidas. Por favor, intenta con otra imagen.', 'error');
+                return;
+            }
+            
+            showStatus('Clasificando imagen...', 'loading');
+            resultDiv.innerHTML = '';
+            resultDiv.classList.remove('empty');
+            retryButton.style.display = 'none';
+            
+            try {
+                console.log('Iniciando clasificación...');
+                const predictions = await model.predict(img);
+                console.log('Predicciones obtenidas:', predictions);
+                
+                if (!predictions || predictions.length === 0) {
+                    throw new Error('No se obtuvieron predicciones del modelo');
+                }
+                
+                // Encontrar la categoría con mayor probabilidad
+                let maxProb = 0;
+                let maxCategory = '';
+                
+                for (let i = 0; i < predictions.length; i++) {
+                    console.log(`Categoría: ${predictions[i].className}, Probabilidad: ${predictions[i].probability}`);
+                    if (predictions[i].probability > maxProb) {
+                        maxProb = predictions[i].probability;
+                        maxCategory = predictions[i].className;
+                    }
+                }
+                
+                // Verificar si la confianza es suficiente (mínimo 40% para móviles)
+                const confidenceThreshold = 0.4;
+                const confidencePercent = (maxProb * 100).toFixed(2);
+                
+                if (maxProb < confidenceThreshold) {
+                    // La confianza es demasiado baja
+                    resultDiv.innerHTML = `
+                        <h3><i class="fas fa-question-circle"></i> Clasificación Incierta</h3>
+                        <div class="uncertain">No se pudo determinar con certeza la categoría de esta imagen</div>
+                        <p>La confianza más alta fue ${confidencePercent}%, que está por debajo del umbral requerido.</p>
+                    `;
+                    showStatus('No se pudo clasificar la imagen con suficiente confianza.', 'info');
+                    retryButton.style.display = 'block';
+                } else {
+                    // Mostrar el resultado con confianza suficiente
+                    resultDiv.innerHTML = `
+                        <h3><i class="fas fa-tag"></i> Resultado de la Clasificación</h3>
+                        <div class="category">${maxCategory}</div>
+                        <div class="confidence">Confianza: ${confidencePercent}%</div>
+                    `;
+                    showStatus(`Clasificación completada: ${maxCategory}`, 'success');
+                    retryButton.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error al clasificar la imagen:', error);
+                showStatus(`Error al clasificar: ${error.message}`, 'error');
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Error al clasificar</h3>
+                        <p>No se pudo clasificar la imagen. Por favor, intenta de nuevo.</p>
+                        <div class="error-details">Detalles: ${error.message}</div>
+                    </div>
+                `;
+                retryButton.style.display = 'block';
+            }
+        }
+
+        // Función para restablecer el clasificador
+        function resetClassifier() {
+            imagePreview.style.display = 'none';
+            imagePreview.src = '';
+            resultDiv.innerHTML = '<p>El resultado de la clasificación aparecerá aquí</p>';
+            resultDiv.classList.add('empty');
+            statusDiv.style.display = 'none';
+            retryButton.style.display = 'none';
+        }
+
+        // Event listener para el botón de reintento
+        retryButton.addEventListener('click', resetClassifier);
+
+        // Inicializar el modelo al cargar la página
+        window.addEventListener('load', initModel);
+
+        // Manejar errores no capturados
+        window.addEventListener('error', function(event) {
+            console.error('Error no capturado:', event.error);
+            showStatus('Ocurrió un error inesperado. Por favor, recarga la página e intenta de nuevo.', 'error');
+        });
+    </script>
+</body>
+</html>
